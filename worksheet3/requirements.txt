@@ -1,5 +1,6 @@
-pennylane>=0.40,<1
-numpy>=1.26
-matplotlib>=3.8
+pennylane
+numpy
+matplotlib
 jupyter
 nbconvert
+nbformat
