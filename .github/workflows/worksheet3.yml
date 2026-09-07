@@ -7,6 +7,10 @@ on:
       - ".github/workflows/worksheet3.yml"
   workflow_dispatch:
 
+concurrency:
+  group: worksheet3
+  cancel-in-progress: false
+
 permissions:
   contents: write
 
@@ -16,38 +20,50 @@ jobs:
 
     steps:
 
-      # ----------------------------------------
+      # ============================================
       # 1. Checkout repository
-      # ----------------------------------------
+      # ============================================
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          ref: main
 
-      # ----------------------------------------
-      # 2. Set up Python
-      # ----------------------------------------
+      # ============================================
+      # 2. Synchronize with latest main
+      #    BEFORE modifying any notebooks
+      # ============================================
+      - name: Sync with latest main
+        run: |
+          git fetch origin main
+          git reset --hard origin/main
+
+      # ============================================
+      # 3. Set up Python
+      # ============================================
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.10"
 
-      # ----------------------------------------
-      # 3. Install dependencies
-      # ----------------------------------------
+      # ============================================
+      # 4. Install dependencies
+      # ============================================
       - name: Install dependencies
         working-directory: worksheet3
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      # ----------------------------------------
-      # 4. Execute all notebooks
-      #    Outputs are saved INSIDE the notebooks
-      # ----------------------------------------
+      # ============================================
+      # 5. Execute ALL notebooks
+      #    --inplace saves outputs INSIDE the files
+      # ============================================
       - name: Execute all notebooks
         working-directory: worksheet3
         run: |
+          set -e
+
           for notebook in *.ipynb; do
             echo "=============================================="
             echo "Executing: $notebook"
@@ -61,9 +77,9 @@ jobs:
               "$notebook"
           done
 
-      # ----------------------------------------
-      # 5. Commit executed notebooks
-      # ----------------------------------------
+      # ============================================
+      # 6. Commit executed notebooks
+      # ============================================
       - name: Commit executed notebooks
         run: |
           git config user.name "github-actions[bot]"
@@ -78,16 +94,9 @@ jobs:
 
           git commit -m "Execute Worksheet 3 notebooks [skip ci]"
 
-      # ----------------------------------------
-      # 6. Sync with latest remote main
-      # ----------------------------------------
-      - name: Sync with remote
-        run: |
-          git pull --rebase origin main
-
-      # ----------------------------------------
-      # 7. Push executed notebooks
-      # ----------------------------------------
+      # ============================================
+      # 7. Push notebooks back to GitHub
+      # ============================================
       - name: Push executed notebooks
         run: |
           git push origin main
